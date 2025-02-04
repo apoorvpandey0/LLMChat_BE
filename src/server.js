@@ -1,21 +1,34 @@
 import express from 'express';
-import dotenv from 'dotenv';
-import connectDB from './config/db.js';
 import authRoutes from './auth/auth.routes.js';
 import chatRoutes from './chat/chat.routes.js';
-
-dotenv.config();
+import { requestLogger } from './middleware/logger.middleware.js';
+import { initializer } from './config/init.js';
 
 const app = express();
 app.use(express.json());
 
-// Connect to MongoDB
-connectDB();
+// Request logger middleware
+app.use(requestLogger);
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 
-// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+async function startServer() {
+    try {
+        // Initialize all services
+        await initializer.initialize();
+
+        // Start the server
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
